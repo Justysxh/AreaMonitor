@@ -10,9 +10,14 @@ import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.os.Message;
+import android.util.Log;
+
+import com.sxhsoft.leave.MonitorService;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by sxh on 2016/9/5.
@@ -38,8 +43,33 @@ public class WifiTool
         return sInstance;
     }
 
+    private static final String KEY_WIFI_NAME = "wifiName";
+    private static final String KEY_SIGNAL_THRESHOLD = "signalThreshold";
+    private static final String KEY_SIGNAL_OFFSET = "signalOffset";
+    private static final String KEY_CHECK_TIMER = "checkTimer";
+    public void saveConfig()
+    {
+        if(mContext!=null)
+        {
+            MobileTool.setContext(mContext);
+            MobileTool.setShareValue(KEY_WIFI_NAME, mWifiName);
+            MobileTool.setShareValue(KEY_SIGNAL_THRESHOLD,mSignalThreshold);
+            MobileTool.setShareValue(KEY_SIGNAL_OFFSET, mSignalOffset);
+            MobileTool.setShareValue(KEY_CHECK_TIMER, mTimer);
+        }
+    }
 
-
+    public void loadConfig()
+    {
+        if(mContext!=null)
+        {
+            MobileTool.setContext(mContext);
+            MobileTool.getShareValue(KEY_WIFI_NAME, mWifiName);
+            MobileTool.getShareValue(KEY_SIGNAL_THRESHOLD,mSignalThreshold);
+            MobileTool.getShareValue(KEY_SIGNAL_OFFSET, mSignalOffset);
+            MobileTool.getShareValue(KEY_CHECK_TIMER, mTimer);
+        }
+    }
 
 
     public static String getCurWifiName(Context context)
@@ -121,6 +151,7 @@ public class WifiTool
         mSignalOffset = signalOffset;
         mSignalThreshold = signalThreshold;
         mWifiName = wifiName;
+        saveConfig();
     }
 
     public void setHandler(Handler handler)
@@ -130,6 +161,7 @@ public class WifiTool
 
     public void startCheck()
     {
+        stop();
         mIsWorking = true;
         processAreaJudge();
     }
@@ -137,11 +169,10 @@ public class WifiTool
     public void stop()
     {
         mIsWorking = false;
-        if (fRun != null)
+        if(mTimerTask!=null)
         {
-            mTimerHandler.removeCallbacks(fRun);
+            mTimerTask.cancel();
         }
-        mTimerHandler.removeCallbacksAndMessages(null);
     }
 
     private void processAreaJudge()
@@ -170,6 +201,7 @@ public class WifiTool
 
     private void processSignal(int signal)
     {
+        Log.i("sxh", "signal:"+signal);
         if(mTimerHandler!=null)
         {
             Message msg = new Message();
@@ -296,23 +328,25 @@ public class WifiTool
     }
 
 
-    Runnable fRun = null;
     private void waitNextUpdate()
     {
-        if (fRun == null)
+        if(mTimerTask!=null)
         {
-            fRun = new Runnable()
-            {
-                @Override
-                public void run()
-                {
-                    processAreaJudge();
-                }
-            };
+            mTimerTask.cancel();
         }
-        if(mTimerHandler!=null)
+        mTimerTask = new MyTimerTask();
+        mTimerOpt.schedule(mTimerTask,mTimer*1000);
+    }
+
+    Timer mTimerOpt = new Timer();
+    TimerTask mTimerTask = null;
+
+    private class MyTimerTask extends TimerTask
+    {
+        @Override
+        public void run()
         {
-            mTimerHandler.postDelayed(fRun, mTimer * 1000);
+            processAreaJudge();
         }
     }
 

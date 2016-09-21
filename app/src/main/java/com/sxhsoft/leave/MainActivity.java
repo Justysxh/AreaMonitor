@@ -1,17 +1,27 @@
 package com.sxhsoft.leave;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
+import android.media.RingtoneManager;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
+import android.os.Vibrator;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -21,10 +31,11 @@ import com.sxhsoft.leave.joanzapata.BaseAdapterHelper;
 import com.sxhsoft.leave.joanzapata.QuickAdapter;
 import com.sxhsoft.leave.tool.WifiTool;
 
+import java.util.Calendar;
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener
+public class MainActivity extends FragmentActivity implements View.OnClickListener
 {
 
     EditText mWifiName;
@@ -44,6 +55,26 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        /*
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.KITKAT)
+        {
+
+            Window window = getWindow();
+            window.setFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
+                    WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+        //*/
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            //透明状态栏
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            //透明导航栏
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
+
+        }
+
+
         setContentView(R.layout.activity_main);
         mWifiName = (EditText) findViewById(R.id.wifiName);
         mCheckPeriod = (EditText) findViewById(R.id.checkPeriod);
@@ -121,14 +152,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void onSave()
     {
+
+
+
+
+
+
         mSSID = mWifiName.getText().toString();
         mIntThreholdSignal = Integer.parseInt( mSignalThreshold.getText().toString() );
         mIntSignalOffset = Integer.parseInt( mSignalOffset.getText().toString() );
         mIntTimer = Integer.parseInt( mCheckTimer.getText().toString());
 
         WifiTool.getObj().update(mIntTimer,mIntThreholdSignal,mIntSignalOffset,mSSID);
-        WifiTool.getObj().stop();
-        WifiTool.getObj().startCheck();
+
+        Intent intent = new Intent(this,MonitorService.class);
+        startService(intent);
+        //*/
+
+        //WifiTool.getObj().stop();
+        //WifiTool.getObj().startCheck();
 
     }
 
